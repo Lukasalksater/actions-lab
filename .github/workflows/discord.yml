@@ -3,10 +3,16 @@ on:
  pull_request:
    branches: [ main ]
 jobs:
+ run-kontroll-check:
+  uses: ./.github/workflows/kontroll.yml
+
+
  notis:
   runs-on: ubuntu-latest
+  if: always()
   steps:
-   - name: Skicka meddelande
+   - name: Skicka meddelande om lyckad kontroll
+     if: needs.run-kontroll-check.result == 'success'
      env:
        WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
        VEM: ${{ github.actor }}
@@ -14,5 +20,17 @@ jobs:
        PullRequest: ${{ github.event.pull_request.title }}
      run: |
        curl -X POST -H "Content-Type: application/json" \
-         -d "{\"content\": \"$VEM skapade en pull request: $PullRequest\"}" \
+         -d "{\"content\": \"$VEM skapade en pull request i $REPO: $PullRequest\"}" \
+         "$WEBHOOK"
+    
+   - name: Skicka meddelande om misslyckad kontroll
+     if: needs.run-kontroll-check.result == 'failure'
+     env:
+       WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+       VEM: ${{ github.actor }}
+       REPO: ${{ github.repository }}
+       PullRequest: ${{ github.event.pull_request.title }}
+     run: |
+       curl -X POST -H "Content-Type: application/json" \
+         -d "{\"content\": \"$VEM skapade en pull request med misslyckad kontroll i $REPO: $PullRequest\"}" \
          "$WEBHOOK"
