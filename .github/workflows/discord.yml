@@ -8,6 +8,7 @@ jobs:
 
 
  notis:
+  needs: run-kontroll-check
   runs-on: ubuntu-latest
   if: always()
   steps:
