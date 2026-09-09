@@ -12,6 +12,13 @@ jobs:
   runs-on: ubuntu-latest
   if: always()
   steps:
+   - uses: actions/checkout@v4
+     with:
+       ref: ${{ github.event.pull_request.head.sha }}
+   - name: hämta commit-meddelande
+     id: commit
+     run: echo "message=$(git log -1 --pretty=%s)" >> "$GITHUB_OUTPUT"
+
    - name: Skicka meddelande om lyckad kontroll
      if: needs.run-kontroll-check.result == 'success'
      env:
@@ -19,9 +26,11 @@ jobs:
        VEM: ${{ github.actor }}
        REPO: ${{ github.repository }}
        PullRequest: ${{ github.event.pull_request.title }}
+       CommitMsg: ${{ steps.commit.outputs.message }}
+
      run: |
        curl -X POST -H "Content-Type: application/json" \
-         -d "{\"content\": \"$VEM skapade en pull request i $REPO: $PullRequest\"}" \
+         -d "{\"content\": \"$VEM skapade en pull request i $REPO med commit-meddelande $CommitMsg: $PullRequest\"}" \
          "$WEBHOOK"
     
    - name: Skicka meddelande om misslyckad kontroll
@@ -31,7 +40,8 @@ jobs:
        VEM: ${{ github.actor }}
        REPO: ${{ github.repository }}
        PullRequest: ${{ github.event.pull_request.title }}
+       CommitMsg: ${{ steps.commit.outputs.message }}
      run: |
        curl -X POST -H "Content-Type: application/json" \
-         -d "{\"content\": \"$VEM skapade en pull request med misslyckad kontroll i $REPO: $PullRequest\"}" \
+         -d "{\"content\": \"$VEM skapade en pull request med misslyckad kontroll i $REPO med commit-meddelande $CommitMsg: $PullRequest\"}" \
          "$WEBHOOK"
